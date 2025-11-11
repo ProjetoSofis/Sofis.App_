@@ -1,20 +1,42 @@
-import { Stack } from 'expo-router'
+import { useFonts } from "expo-font";
+import { SplashScreen, Stack } from 'expo-router';
+import { useEffect } from 'react';
+import { StyleSheet, View } from "react-native";
 
 export default function MainLayout() {
-  return (
-    <Stack>
-      <Stack.Screen
-        name="index"
-        options={{ headerShown: false }}
-      />
-      <Stack.Screen
-        name="(auth)/signup/page"
-        options={{ headerShown: false }}
-      />
-      <Stack.Screen
-        name="(panel)/profile/page"
-        options={{ headerShown: false }}
-      />
-    </Stack>
-  )
+  const [fontsLoaded] = useFonts({
+    Nunito: require("../../assets/fonts/Nunito.ttf"),
+    Baloo: require("../../assets/fonts/Baloo2.ttf"),
+  });
+
+  useEffect(() => {
+    if (fontsLoaded) SplashScreen.hideAsync();
+  }, [fontsLoaded]);
+
+  if (!fontsLoaded) return null;
+
+return (
+    <View style={[styles.container]}>
+      <Stack>
+        <Stack.Screen 
+          name="index" 
+          options={{ headerShown: false }} 
+        />
+        <Stack.Screen 
+          name="(auth)/signup/page" 
+          options={{ headerShown: false }} 
+        />
+        <Stack.Screen 
+          name="(panel)/profile/page" 
+          options={{ headerShown: false }} 
+        />
+      </Stack>
+    </View>
+  );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+});
