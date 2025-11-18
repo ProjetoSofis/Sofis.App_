@@ -19,7 +19,7 @@ return (
     <View style={[styles.container]}>
       <Stack>
         <Stack.Screen 
-          name="index" 
+          name="login" 
           options={{ headerShown: false }} 
         />
         <Stack.Screen 
@@ -27,9 +27,8 @@ return (
           options={{ headerShown: false }} 
         />
         <Stack.Screen 
-          name="(panel)/profile/page" 
-          options={{ headerShown: false }} 
-        />
+          name="(tabs)" 
+          options={{ headerShown: false }} />
       </Stack>
     </View>
   );

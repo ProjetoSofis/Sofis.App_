@@ -31,7 +31,7 @@ export default function Login() {
     console.log({ email, password })
     setLoading(false)
 
-    router.replace('/(panel)/profile/page');
+    router.replace('/(tabs)/home');
   }
 
   return (

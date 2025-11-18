@@ -1,9 +1,11 @@
+import ColorList from '@/components/ColorList';
+import colors from '@/constants/colors';
 import { StyleSheet, Text, View } from 'react-native';
 
-export default function Profile() {
+export default function Reports() {
   return (
-    <View style={styles.container}>
-      <Text>Página Perfil</Text>
+    <View>
+      <ColorList color={colors.yellow}/>
     </View>
   )
 }
