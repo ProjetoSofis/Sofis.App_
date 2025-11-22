@@ -1,12 +1,14 @@
 import ColorList from '@/components/ColorList';
 import colors from '@/constants/colors';
-import { StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 
 export default function Home() {
   return (
-    <View>
-      <ColorList color={colors.red}/>
-    </View>
+    <ScrollView>
+      <View>
+        <ColorList color={colors.red}/>
+      </View>
+    </ScrollView>
   )
 }
 
