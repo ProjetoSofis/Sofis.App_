@@ -2,6 +2,7 @@ import { useFonts } from "expo-font";
 import { SplashScreen, Stack } from 'expo-router';
 import { useEffect } from 'react';
 import { StyleSheet, View } from "react-native";
+import { AuthProvider } from "../context/AuthContext";
 
 export default function MainLayout() {
   const [fontsLoaded] = useFonts({
@@ -16,6 +17,7 @@ export default function MainLayout() {
   if (!fontsLoaded) return null;
 
 return (
+  <AuthProvider>
     <View style={[styles.container]}>
       <Stack>
         <Stack.Screen 
@@ -31,6 +33,7 @@ return (
           options={{ headerShown: false }} />
       </Stack>
     </View>
+    </AuthProvider>
   );
 }
 
