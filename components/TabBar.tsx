@@ -40,14 +40,14 @@ export default function TabBar({ state, descriptors, navigation }) {
         };
 
         return (
-          <TabBarButton 
+          <TabBarButton
             key={route.name}
             style={styles.tabbarItem}
             onPress={onPress}
             onLongPress={onLongPress}
             isFocused={isFocused}
             routeName={route.name}
-            color={isFocused? primaryColor: greyColor}
+            color={isFocused ? primaryColor : greyColor}
             label={label}
           />
         )
@@ -57,8 +57,8 @@ export default function TabBar({ state, descriptors, navigation }) {
 }
 
 const styles = StyleSheet.create({
-  tabbar:{
-    position: 'absolute', 
+  tabbar: {
+    position: 'absolute',
     bottom: 25,
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -69,9 +69,11 @@ const styles = StyleSheet.create({
     borderRadius: 25,
     borderCurve: 'continuous',
     shadowColor: 'black',
-    shadowOffset: {width: 0, height: 10},
+    shadowOffset: { width: 0, height: 10 },
     shadowRadius: 10,
-    shadowOpacity: 0.1
+    shadowOpacity: 0.1,
+    zIndex: 1,
+    elevation: 1,
   },
   tabbarItem: {
     flex: 1,
