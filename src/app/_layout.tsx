@@ -1,6 +1,6 @@
 import { useFonts } from "expo-font";
 import { SplashScreen, Stack } from 'expo-router';
-import { useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { StyleSheet, View } from "react-native";
 import { AuthProvider } from "../context/AuthContext";
 
@@ -16,20 +16,38 @@ export default function MainLayout() {
 
   if (!fontsLoaded) return null;
 
+<<<<<<< HEAD
 return (
   <AuthProvider>
+=======
+  return (  
+>>>>>>> cad94a1d7151d81e8d12106a965b792b245163ed
     <View style={[styles.container]}>
       <Stack>
-        <Stack.Screen 
-          name="login" 
-          options={{ headerShown: false }} 
+        <Stack.Screen
+          name="login"
+          options={{ headerShown: false }}
         />
-        <Stack.Screen 
-          name="(auth)/signup/page" 
-          options={{ headerShown: false }} 
+        <Stack.Screen
+          name="(auth)/signup/page"
+          options={{ headerShown: false }}
         />
-        <Stack.Screen 
-          name="(tabs)" 
+        <Stack.Screen
+          name="(actions)/report/create"
+          options={{
+            title: 'Novo Relatório',
+            headerTitleAlign: 'center'
+          }}
+        />
+        <Stack.Screen
+          name="(actions)/record/create"
+          options={{
+            title: 'Nova Ficha',
+            headerTitleAlign: 'center'
+          }}
+        />
+        <Stack.Screen
+          name="(tabs)"
           options={{ headerShown: false }} />
       </Stack>
     </View>

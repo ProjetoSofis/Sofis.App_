@@ -75,8 +75,20 @@ export default function Login() {
 
   return (
 
+<<<<<<< HEAD
     <SafeAreaView style={{ flex: 1 }}>
       <ScrollView style={{ flex: 1, backgroundColor: colors.beige }}>
+=======
+    <KeyboardAvoidingView
+      style={{ flex: 1, backgroundColor: colors.beige }}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    >
+      <ScrollView
+        style={{ flex: 1, backgroundColor: colors.beige }}
+        contentContainerStyle={{ flexGrow: 1 }}
+        keyboardShouldPersistTaps="handled"
+      >
+>>>>>>> cad94a1d7151d81e8d12106a965b792b245163ed
         <LinearGradient
           colors={colors.gradient.warm}
           start={{ x: 0, y: 0 }}
