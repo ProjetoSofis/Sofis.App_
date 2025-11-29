@@ -16,12 +16,8 @@ export default function MainLayout() {
 
   if (!fontsLoaded) return null;
 
-<<<<<<< HEAD
-return (
-  <AuthProvider>
-=======
   return (  
->>>>>>> cad94a1d7151d81e8d12106a965b792b245163ed
+    <AuthProvider>
     <View style={[styles.container]}>
       <Stack>
         <Stack.Screen
