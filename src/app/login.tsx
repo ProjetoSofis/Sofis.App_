@@ -3,7 +3,7 @@ import paddingTop from '@/constants/screen';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../context/AuthContext';
 
@@ -64,7 +64,7 @@ export default function Login() {
       setErrors(prev => ({...prev, code: true}));
       return;
     }
-    const result = await login2FA(email, twoFactorCode);
+    const result = await login2FA(twoFactorCode);
 
     if (result.status === 'SUCCESS') {
       router.replace('/(tabs)/home');
@@ -74,11 +74,8 @@ export default function Login() {
   }
 
   return (
-
-<<<<<<< HEAD
     <SafeAreaView style={{ flex: 1 }}>
       <ScrollView style={{ flex: 1, backgroundColor: colors.beige }}>
-=======
     <KeyboardAvoidingView
       style={{ flex: 1, backgroundColor: colors.beige }}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -88,7 +85,6 @@ export default function Login() {
         contentContainerStyle={{ flexGrow: 1 }}
         keyboardShouldPersistTaps="handled"
       >
->>>>>>> cad94a1d7151d81e8d12106a965b792b245163ed
         <LinearGradient
           colors={colors.gradient.warm}
           start={{ x: 0, y: 0 }}
@@ -101,7 +97,8 @@ export default function Login() {
             </Text>
             <Text style={styles.slogan}>
               Facilitando o cuidado, fortalecendo propósitos.
-              {is2FAMode ? (<><br /><span>Verifique sua identidade</span></>) : ''} 
+              {/* CORRIGIDO: Usando \n para quebra de linha em React Native */}
+              {is2FAMode ? `\nVerifique sua identidade` : ''} 
             </Text>
             {is2FAMode && (
               <Text style={{color: colors.beige, marginBottom: 10, fontSize: 14}}>
@@ -140,7 +137,7 @@ export default function Login() {
                   )}
                 </Pressable>
                 {/* <Link href='/(auth)/signin/LoginPage)' style={styles.link}> */}
-                  <Text>Ainda não possui uma conta? Cadastre-se</Text>
+                  <Text style={styles.link}>Ainda não possui uma conta? Cadastre-se</Text>
                 {/* </Link> */}
               </>
             ) : (
@@ -171,31 +168,12 @@ export default function Login() {
                 </TouchableOpacity>
               </>
             )}
-            {/* <Field
-              label="Email"
-              value={email}
-              onChange={setEmail}
-              error={errors.email}
-            />
-
-            <Field
-              label="Senha"
-              value={password}
-              onChange={setPassword}
-              secure
-              error={errors.password}
-            /> */}
-
-            {/* // <Pressable style={styles.button} onPress={HandleSignin}>
-            //   <Text style={styles.buttonText}>{loading ? 'Carregando...' : 'Acessar'}</Text>
-            // </Pressable>
-
-            // <Link href='/(auth)/signup/page' style={styles.link}>
-            //   <Text>Ainda não possui uma conta? Cadastre-se</Text>
-            // </Link> */}
+            
           </View>
         </LinearGradient>
       </ScrollView>
+    </KeyboardAvoidingView>
+    </ScrollView>
     </SafeAreaView>
 
 
@@ -215,7 +193,7 @@ function Field({ label, value, onChange, secure, error, ...props }: any) {
         value={value}
         onChangeText={onChange}
         secureTextEntry={secure}
-        {... props}
+        { ...props}
       />
     </View>
   )
