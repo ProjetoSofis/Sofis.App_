@@ -2,11 +2,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import { createContext, useContext, useEffect, useState } from 'react';
 
-<<<<<<< HEAD
-const API_URL = 'https://localhost:5001/api/v1';
-=======
-const API_URL = 'https://localhost:7221/api/v1';
->>>>>>> cad94a1d7151d81e8d12106a965b792b245163ed
+const API_URL = 'http://192.168.97.141/api/v1';
+
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
@@ -20,6 +17,7 @@ export const AuthProvider = ({ children }) => {
                 const storedToken = await AsyncStorage.getItem('userToken');
                 if (storedToken) {
                     setToken(storedToken);
+                    // O backend deve retornar um JWT ou token completo
                     axios.defaults.headers.common['Authorization'] = `Bearer ${storedToken}`;
                 }
             } catch (e) {
@@ -30,6 +28,7 @@ export const AuthProvider = ({ children }) => {
         };
         loadToken();
     }, []);
+    
     const login = async (email, password) => {
         setIsLoading(true);
         try{
@@ -37,91 +36,61 @@ export const AuthProvider = ({ children }) => {
                 email: email,
                 password: password
             });
-<<<<<<< HEAD
-            console.log('Response: ', response)
+            console.log('Response: ', response.data);
 
             if (response.data.isTwoFactorRequired) {
-=======
-
-            if (response.data.requires2fa) {
->>>>>>> cad94a1d7151d81e8d12106a965b792b245163ed
                 setIsLoading(false);
-                await AsyncStorage.setItem('pending2FaEmail', email);
+                await AsyncStorage.setItem('pending2FaEmail', email); 
                 return { status: 'REQUIRES_2FA' };
             }
+            
             const { token: newTtoken, user: userData } = response.data;
             await AsyncStorage.setItem('userToken', newTtoken);
             setToken(newTtoken);
             setUser(userData);
             axios.defaults.headers.common['Authorization'] = `Bearer ${newTtoken}`;
             setIsLoading(false);
-<<<<<<< HEAD
             return { status: 'SUCCESS', token: newTtoken };
-=======
-            return { status: 'SUCESS', token: newTtoken };
->>>>>>> cad94a1d7151d81e8d12106a965b792b245163ed
+            
         } catch (e) {
             console.error('Falha ao fazer login', e.response?.data || e.message);
             setIsLoading(false)
-            return { status: 'FAILURE', message: e.response?.data.message || 'Erro desconhecido'};
+            return { status: 'FAILURE', message: e.response?.data.message || 'Erro desconhecido ao tentar acessar a conta'};
         }
     }
 
-<<<<<<< HEAD
-    const login2FA = async (email, code) => {
-        setIsLoading(true);
-        // const email = await AsyncStorage.getItem('pending2FaEmail');
 
-        // if (!email) {
-        //     setIsLoading(false);
-        //     return { status: 'FAILURE', message: 'Email de 2FA não encontrado' };
-        // }
-        try {
-            const response = await axios.post(`${API_URL}/Auth/verify-2fa`, {
-                email: email,
-                TwoFactorCode: code,
-            });
-            console.log("Response: ", response);
-
-            const { token: newTtoken, accessToken: accessToken } = response.data;
-=======
     const login2FA = async (code) => {
         setIsLoading(true);
         const email = await AsyncStorage.getItem('pending2FaEmail');
 
         if (!email) {
             setIsLoading(false);
-            return { status: 'FAILURE', message: 'Email de 2FA não encontrado' };
+            return { status: 'FAILURE', message: 'Email de 2FA não encontrado. Por favor, faça login novamente.' };
         }
+        
         try {
-            const response = await axios.post(`${API_URL}/Auth/login-2fa`, {
+            const response = await axios.post(`${API_URL}/Auth/verify-2fa`, { 
                 email: email,
-                code: code,
+                twoFactorCode: code,
             });
+            console.log("Response 2FA: ", response.data);
 
-            const { token: newTtoken, user: userData } = response.data;
->>>>>>> cad94a1d7151d81e8d12106a965b792b245163ed
+            const { token: newTtoken } = response.data; 
 
             await AsyncStorage.removeItem('pending2FaEmail');
             await AsyncStorage.setItem('userToken', newTtoken);
 
             setToken(newTtoken);
-<<<<<<< HEAD
-            axios.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`;
-
-            setIsLoading(false);
-            return { status: 'SUCCESS', token: newTtoken };
-=======
-            setUser(user.data);
+            // setUser(userData);
             axios.defaults.headers.common['Authorization'] = `Bearer ${newTtoken}`;
 
             setIsLoading(false);
-            return { status: 'SUCESS', token: newTtoken };
->>>>>>> cad94a1d7151d81e8d12106a965b792b245163ed
+            return { status: 'SUCCESS', token: newTtoken }; // Corrigido 'SUCESS' para 'SUCCESS'
         } catch (e) {
-            console.error('Falha ao fazer login', e.response?.data || e.message);
+            console.error('Falha ao fazer login com 2FA', e.response?.data || e.message);
             setIsLoading(false);
-            return { status: 'FAILURE', message: e.response?.data?.message || 'Erro desconhecido' };
+            return { status: 'FAILURE', message: e.response?.data?.message || 'Código inválido ou expirado' };
         }
     }
 
@@ -129,6 +98,7 @@ export const AuthProvider = ({ children }) => {
         setIsLoading(true);
         try{
             await AsyncStorage.removeItem('userToken');
+            await AsyncStorage.removeItem('pending2FaEmail');
 
             setToken(null);
             setUser(null);
@@ -140,18 +110,16 @@ export const AuthProvider = ({ children }) => {
             setIsLoading(false);
         }
     };
+    
     const contextValue = {
         user,
         token,
         isLoading,
         login,
-<<<<<<< HEAD
         logout,
-        login2FA
-=======
-        logout
->>>>>>> cad94a1d7151d81e8d12106a965b792b245163ed
+        login2FA 
     }
+    
     return (
         <AuthContext.Provider value={contextValue}>
             {children}
