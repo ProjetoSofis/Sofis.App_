@@ -10,13 +10,7 @@
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.3",
-<<<<<<< HEAD
     "@react-native-async-storage/async-storage": "^2.2.0",
-=======
-    "@gorhom/bottom-sheet": "^5.2.7",
-    "@react-native-community/datetimepicker": "8.4.4",
-    "@react-native-picker/picker": "2.11.1",
->>>>>>> cad94a1d7151d81e8d12106a965b792b245163ed
     "@react-navigation/native": "^7.1.8",
     "axios": "^1.13.2",
     "expo": "~54.0.25",
