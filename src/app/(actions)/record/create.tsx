@@ -1,147 +1,162 @@
 import colors from "@/constants/colors";
-import DateTimePicker from '@react-native-community/datetimepicker';
-import { Picker } from '@react-native-picker/picker';
+import api from "@/src/services/api";
+import DateTimePicker from "@react-native-community/datetimepicker";
 import { useRouter } from "expo-router";
 import { useState } from "react";
-import { Button, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import {
+  Alert,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+} from "react-native";
+
+import { useRecord } from "@/src/context/RecordContext";
+import { validateCPF, validateDate } from "@/src/utils/validators";
+
+async function createRecord(payload) {
+  const res = await fetch(`${api.baseUrl}/Children`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ dto: payload })
+  });
+
+  
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({}));
+    throw new Error(error.message || "Erro ao criar ficha");
+  }
+
+  return res.json();
+}
 
 export default function CreateRecord() {
   const router = useRouter();
+  const { record, updateRecord } = useRecord();
 
-  const [name, setName] = useState("");
-  const [date, setDate] = useState(new Date());
-  const [nameResponsible, setNameRsp] = useState("");
-  const [address, setAddress] = useState("");
-  const [show, setShow] = useState(false);
-  const [school, setSchool] = useState("");
-  const [content, setContent] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("");
-  const [reporter, setReporter] = useState("");
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [birthDate, setBirthDate] = useState(new Date());
 
-  const onChange = (event: any, selectedDate?: Date) => {
-    const currentDate = selectedDate || date;
+  const formattedDate = birthDate.toISOString().split("T")[0];
 
-    if (Platform.OS === 'android') {
-      setShow(false);
+  function onDateChange(_, date) {
+    const d = date || birthDate;
+
+    if (Platform.OS === "android") {
+      setShowDatePicker(false);
     }
 
-    setDate(currentDate);
-  };
+    setBirthDate(d);
+    updateRecord("birthDate", d.toISOString().split("T")[0]);
+  }
 
-  const showDatepicker = () => {
-    setShow(true);
-  };
+  function validateForm() {
+    if (!record.name) return "Nome é obrigatório.";
+    if (!validateCPF(record.cpf)) return "CPF inválido.";
+    if (!validateDate(record.birthDate)) return "Data de nascimento inválida.";
+    if (!record.responsible) return "Responsável obrigatório.";
+    if (!record.unidadeEscolar) return "Escola obrigatória.";
+    return null;
+  }
 
-  const formattedDate = date.toLocaleDateString('pt-BR');
+  async function handleSubmit() {
+    const error = validateForm();
+    if (error) {
+      Alert.alert("Erro", error);
+      return;
+    }
 
-  const handleCreate = () => {
-    const payload = { name, date, nameResponsible, address, school };
-
-    console.log("Criar relatório:", payload);
-    // await api.post("/records", payload);
-
-    router.back();
-  };
+    try {
+      await createRecord({ dto: record });
+      Alert.alert("Sucesso", "Ficha criada com sucesso!");
+      router.back();
+    } catch (err) {
+      console.log(record);
+      Alert.alert("Erro", err.message);
+    }
+  }
 
   return (
     <ScrollView contentContainerStyle={styles.wrapper}>
-      <Text style={styles.label}>Nome da criança</Text>
+      <Text style={styles.label}>Nome</Text>
       <TextInput
         style={styles.input}
-        placeholder="Digite o nome"
-        value={name}
-        onChangeText={setName}
+        value={record.name}
+        onChangeText={(t) => updateRecord("name", t)}
       />
 
-      <View>
-        <Text style={styles.label}>Data de nascimento:</Text>
-
-        <TouchableOpacity onPress={showDatepicker} style={styles.inputButton}>
-          <Text style={styles.inputText}>{formattedDate}</Text>
-        </TouchableOpacity>
-
-        {show && (
-          <DateTimePicker
-            testID="dateTimePicker"
-            value={date}
-            mode="date"
-            is24Hour={true}
-            onChange={onChange}
-            display="default"
-          />
-        )}
-
-        {Platform.OS === 'ios' && show && (
-          <Button title="Confirmar Data" onPress={() => setShow(false)} />
-        )}
-      </View>
-
-      <Text style={styles.label}>Nome do responsável</Text>
+      <Text style={styles.label}>CPF</Text>
       <TextInput
         style={styles.input}
-        placeholder="Responsável da criança"
-        value={nameResponsible}
-        onChangeText={setNameRsp}
+        value={record.cpf}
+        onChangeText={(t) => updateRecord("cpf", t)}
+        keyboardType="numeric"
+      />
+
+      <Text style={styles.label}>Data de nascimento</Text>
+      <TouchableOpacity
+        style={styles.inputButton}
+        onPress={() => setShowDatePicker(true)}
+      >
+        <Text>{formattedDate}</Text>
+      </TouchableOpacity>
+
+      {showDatePicker && (
+        <DateTimePicker
+          value={birthDate}
+          mode="date"
+          onChange={onDateChange}
+        />
+      )}
+
+      <Text style={styles.label}>Responsável</Text>
+      <TextInput
+        style={styles.input}
+        value={record.responsible}
+        onChangeText={(t) => updateRecord("responsible", t)}
       />
 
       <Text style={styles.label}>Endereço</Text>
       <TextInput
         style={styles.input}
-        placeholder="Endereço residencial"
-        value={address}
-        onChangeText={setAddress}
+        value={record.endereco}
+        onChangeText={(t) => updateRecord("endereco", t)}
       />
 
       <Text style={styles.label}>Escola</Text>
       <TextInput
         style={styles.input}
-        placeholder="Nome da escola"
-        value={school}
-        onChangeText={setSchool}
+        value={record.unidadeEscolar}
+        onChangeText={(t) => updateRecord("unidadeEscolar", t)}
       />
 
-      <View>
-        <Text style={styles.label}>Demanda:</Text>
-
-        <View style={styles.inputWrapper}>
-          <Picker
-            selectedValue={selectedCategory}
-            onValueChange={(itemValue, itemIndex) =>
-              setSelectedCategory(itemValue)
-            }
-            style={styles.picker}
-            mode="dropdown"
-          >
-            <Picker.Item label="Selecione uma opção..." value="" enabled={false} color={colors.beige} />
-
-            <Picker.Item label="Agressão" value="01" />
-            <Picker.Item label="Depressão" value="02" />
-            <Picker.Item label="Trauma" value="03" />
-            <Picker.Item label="Outros" value="04" />
-          </Picker>
-        </View>
-      </View>
-
-      <Text style={styles.label}>Relato</Text>
-      <TextInput
-        style={styles.textarea}
-        placeholder="Escreva aqui..."
-        value={content}
-        onChangeText={setContent}
-        multiline
-      />
-
-
-      <Text style={styles.label}>Relator</Text>
+      <Text style={styles.label}>Ano escolar</Text>
       <TextInput
         style={styles.input}
-        placeholder="Relator(a) da história"
-        value={reporter}
-        onChangeText={setReporter}
+        value={record.anoEscolar}
+        onChangeText={(t) => updateRecord("anoEscolar", t)}
+        keyboardType="numeric"
       />
 
-      <Pressable style={styles.button} onPress={handleCreate}>
-        <Text style={styles.buttonText}>Criar</Text>
+      <Text style={styles.label}>Nome da mãe</Text>
+      <TextInput
+        style={styles.input}
+        value={record.momName}
+        onChangeText={(t) => updateRecord("momName", t)}
+      />
+
+      <Text style={styles.label}>Nome do pai</Text>
+      <TextInput
+        style={styles.input}
+        value={record.dadName}
+        onChangeText={(t) => updateRecord("dadName", t)}
+      />
+
+      <Pressable style={styles.button} onPress={handleSubmit}>
+        <Text style={styles.buttonText}>Criar ficha</Text>
       </Pressable>
     </ScrollView>
   );
@@ -150,57 +165,59 @@ export default function CreateRecord() {
 const styles = StyleSheet.create({
   wrapper: {
     padding: 20,
-    gap: 16,
-  },
-  label: {
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  input: {
-    padding: 12,
-    borderWidth: 1,
-    borderRadius: 8,
-  },
-  inputButton: {
-    marginTop: 12,
-    borderWidth: 1,
-    padding: 12,
-    borderRadius: 8,
-  },
-  inputText: {
-    fontSize: 16,
-  },
-  textarea: {
-    padding: 12,
-    borderWidth: 1,
-    borderRadius: 8,
-    minHeight: 140,
-    textAlignVertical: "top",
-  },
-  button: {
-    marginTop: 20,
-    backgroundColor: colors.orangeLight,
-    padding: 14,
-    borderRadius: 10,
-    alignItems: "center"
-  },
-  buttonText: {
-    color: colors.beige,
-    fontSize: 16
+    gap: 20,
+    paddingBottom: 40,
+    backgroundColor: "#F8F8F8",
   },
 
-  container: {
-    padding: 20,
-    gap: 10,
-  },
-  inputWrapper: {
-    marginTop: 12,
+label: {
+  fontSize: 14,
+  fontWeight: "600",
+  color: "#555",
+  marginBottom: 2
+},
+
+  input: {
+    padding: 14,
     borderWidth: 1,
-    borderRadius: 8,
-    height: 50,
-    justifyContent: 'center',
+    borderColor: "#DDD",
+    borderRadius: 10,
+    backgroundColor: "white",
+    fontSize: 16,
+    shadowColor: "#000",
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
   },
-  picker: {
-    width: '100%',
-  }
+
+  inputButton: {
+    padding: 14,
+    borderWidth: 1,
+    borderColor: "#DDD",
+    borderRadius: 10,
+    backgroundColor: "white",
+    shadowColor: "#000",
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+
+  button: {
+    marginTop: 30,
+    backgroundColor: colors.orangeLight,
+    paddingVertical: 16,
+    borderRadius: 12,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+    elevation: 3,
+  },
+
+  buttonText: {
+    color: colors.beige,
+    fontSize: 17,
+    fontWeight: "600",
+  },
 });
+
