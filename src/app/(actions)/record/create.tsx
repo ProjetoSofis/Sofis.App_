@@ -1,6 +1,6 @@
 import colors from "@/constants/colors";
-import api from "@/src/services/api";
 import DateTimePicker from "@react-native-community/datetimepicker";
+import axios from "axios";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import {
@@ -13,25 +13,37 @@ import {
   TextInput,
   TouchableOpacity,
 } from "react-native";
+import api from "../../../services/api";
 
 import { useRecord } from "@/src/context/RecordContext";
 import { validateCPF, validateDate } from "@/src/utils/validators";
 
+const API_URL = api.defaults.baseURL;
+
 async function createRecord(payload) {
-  const res = await fetch(`${api.baseUrl}/Children`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ dto: payload })
-  });
+  try {
+    const res = await axios.post(
+      `${API_URL}/Children`,
+      payload,
+      {
+        headers: {
+          "Content-Type": "application/json",
+        }
+      }
+    );
 
-  
-  if (!res.ok) {
-    const error = await res.json().catch(() => ({}));
-    throw new Error(error.message || "Erro ao criar ficha");
+    return res.data;
+
+  } catch (error) {
+    const message =
+      error.response?.data?.message ||
+      error.message ||
+      "Erro ao criar ficha";
+
+    throw new Error(message);
   }
-
-  return res.json();
 }
+
 
 export default function CreateRecord() {
   const router = useRouter();
@@ -70,11 +82,11 @@ export default function CreateRecord() {
     }
 
     try {
-      await createRecord({ dto: record });
+      await createRecord(record);
       Alert.alert("Sucesso", "Ficha criada com sucesso!");
       router.back();
+
     } catch (err) {
-      console.log(record);
       Alert.alert("Erro", err.message);
     }
   }
@@ -162,6 +174,7 @@ export default function CreateRecord() {
   );
 }
 
+
 const styles = StyleSheet.create({
   wrapper: {
     padding: 20,
@@ -170,12 +183,12 @@ const styles = StyleSheet.create({
     backgroundColor: "#F8F8F8",
   },
 
-label: {
-  fontSize: 14,
-  fontWeight: "600",
-  color: "#555",
-  marginBottom: 2
-},
+  label: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#555",
+    marginBottom: 2
+  },
 
   input: {
     padding: 14,
@@ -204,7 +217,7 @@ label: {
 
   button: {
     marginTop: 30,
-    backgroundColor: colors.orangeLight,
+    backgroundColor: colors.orangeDark,
     paddingVertical: 16,
     borderRadius: 12,
     alignItems: "center",

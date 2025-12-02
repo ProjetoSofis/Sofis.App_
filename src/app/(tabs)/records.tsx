@@ -1,6 +1,7 @@
+import api from "@/src/services/api";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useRouter } from "expo-router";
-import { useEffect, useState } from "react";
+import { useFocusEffect, useRouter } from "expo-router";
+import { useCallback, useEffect, useState } from "react";
 import { ScrollView, Text, TouchableOpacity, View } from "react-native";
 
 import GlobalList from "@/components/GlobalList";
@@ -16,6 +17,14 @@ export default function RecordScreen() {
   const [loading, setLoading] = useState(false);
 
   const [history, setHistory] = useState<string[]>([]);
+  const API_URL = api.defaults.baseURL;
+
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchAll();
+    }, [])
+  );
 
   useEffect(() => {
     loadHistory();
@@ -25,7 +34,7 @@ export default function RecordScreen() {
     try {
       const data = await AsyncStorage.getItem("search_history");
       if (data) setHistory(JSON.parse(data));
-    } catch {}
+    } catch { }
   }
 
   async function saveToHistory(text: string) {
@@ -47,23 +56,23 @@ export default function RecordScreen() {
   }, [query]);
 
   async function fetchAll() {
-    const res = await fetch(`https://sofis-api.onrender.com/api/v1/Children`);
+    const res = await fetch(`${API_URL}/Children`);
     return res.ok ? res.json() : [];
   }
 
   async function fetchByName(text: string) {
-    const res = await fetch(`https://sofis-api.onrender.com/api/v1/Children/name/${text}`);
+    const res = await fetch(`${API_URL}/Children/name/${text}`);
     return res.ok ? res.json() : [];
   }
 
   async function fetchByCPF(text: string) {
-    const res = await fetch(`https://sofis-api.onrender.com/api/v1/Children/cpf/${text}`);
+    const res = await fetch(`${API_URL}/Children/cpf/${text}`);
     return res.ok ? res.json() : [];
   }
 
   async function fetchById(text: string) {
     if (!/^\d+$/.test(text)) return [];
-    const res = await fetch(`https://sofis-api.onrender.com/api/v1/Children/${text}`);
+    const res = await fetch(`${API_URL}/Children/${text}`);
     return res.ok ? [await res.json()] : [];
   }
 

@@ -1,40 +1,53 @@
 import colors from "@/constants/colors";
 import api from "@/src/services/api";
+import axios from "axios";
 import { useLocalSearchParams, useNavigation, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 export default function ViewRecord() {
   const router = useRouter();
-  const { id, name } = useLocalSearchParams();
+  const { id } = useLocalSearchParams();
   const [record, setRecord] = useState(null);
   const [loading, setLoading] = useState(true);
   const navigation = useNavigation();
+  const API_URL = api.defaults.baseURL;
 
   useEffect(() => {
     async function loadRecord() {
       try {
-        const res = await fetch(`${api.baseUrl}/Children/${id}`);
-        if (!res.ok) throw new Error("Erro ao carregar ficha");
-        const data = await res.json();
-        setRecord(data);
-        console.log(data)
+        const response = await axios.get(`${API_URL}/Children/${id}`);
+        setRecord(response.data);
       } catch (err) {
-        console.log(err);
+        console.log("Erro ao carregar ficha:", err);
       } finally {
         setLoading(false);
       }
     }
+
     loadRecord();
+
     navigation.setOptions({
-      title: `Relatório ${name}`,
+      title: `Visualizar ficha`,
       headerTitleAlign: "center",
     });
-  }, [id, name]);
+  }, [id]);
 
   if (loading) return <ActivityIndicator size="large" style={{ marginTop: 50 }} />;
 
   if (!record) return <Text style={{ padding: 20 }}>Ficha não encontrada.</Text>;
+
+  async function deleteRecord() {
+    try {
+      const response = await axios.delete(`${API_URL}/Children/deletarcrianca/${id}`);
+      setRecord(response.data);
+      router.back()
+    } catch (err) {
+      console.log("Erro ao deletar ficha:", err);
+    } finally {
+      setLoading(false);
+    }
+  }
 
   return (
     <ScrollView contentContainerStyle={styles.wrapper}>
@@ -81,15 +94,20 @@ export default function ViewRecord() {
           <Text style={styles.fieldValue}>{record.dadName}</Text>
         </View>
 
-        {/* Botão de Editar */}
         <TouchableOpacity
-          style={[styles.button, { backgroundColor: colors.orangeDark }]}
-          onPress={() => router.push(`/edit?id=${id}`)}
+          style={[styles.button, { backgroundColor: colors.green }]}
+          onPress={() => router.push(`/edit`)}
         >
           <Text style={styles.buttonText}>Editar</Text>
         </TouchableOpacity>
 
-        {/* Botão de Voltar */}
+        <TouchableOpacity
+          style={[styles.button, { backgroundColor: colors.red }]}
+          onPress={deleteRecord}
+        >
+          <Text style={styles.buttonText}>Deletar</Text>
+        </TouchableOpacity>
+
         <TouchableOpacity style={styles.button} onPress={() => router.back()}>
           <Text style={styles.buttonText}>Voltar</Text>
         </TouchableOpacity>
@@ -136,7 +154,7 @@ const styles = StyleSheet.create({
   },
 
   button: {
-    marginTop: 12,
+    marginTop: 4,
     backgroundColor: colors.orangeLight,
     paddingVertical: 12,
     borderRadius: 10,

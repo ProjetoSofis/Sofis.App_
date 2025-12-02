@@ -1,5 +1,6 @@
 import colors from "@/constants/colors";
 import api from "@/src/services/api";
+import axios from "axios";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import { Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity } from "react-native";
@@ -10,12 +11,13 @@ export default function EditRecord() {
 
   const [record, setRecord] = useState(null);
   const [loading, setLoading] = useState(true);
+  const API_URL = api.defaults.baseURL;
 
   // Carregar dados existentes
   useEffect(() => {
     async function loadRecord() {
       try {
-        const res = await fetch(`${api.baseUrl}/Children/${id}`);
+        const res = await fetch(`${API_URL}/Children/${id}`);
         if (!res.ok) throw new Error("Erro ao carregar ficha");
         const data = await res.json();
         setRecord(data);
@@ -39,21 +41,23 @@ export default function EditRecord() {
 
   async function handleSave() {
     try {
-      const res = await fetch(`${api.baseUrl}/Children/atualizarCrianca/${id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ dto: record }),
-      });
+      const res = await axios.put(`${API_URL}/Children/atualizarCrianca/${id}`,
+        record,
+        {
+          headers: {
+            "Content-Type": "application/json",
+          }
+        }
+      );
+      return res.data;
 
-      if (!res.ok) {
-        const error = await res.json().catch(() => ({}));
-        throw new Error(error.message || "Erro ao atualizar ficha");
-      }
+    } catch (error) {
+      const message =
+        error.response?.data?.message ||
+        error.message ||
+        "Erro ao criar ficha";
 
-      Alert.alert("Sucesso", "Ficha atualizada com sucesso!");
-      router.back();
-    } catch (err) {
-      Alert.alert("Erro", err.message);
+      throw new Error(message);
     }
   }
 
