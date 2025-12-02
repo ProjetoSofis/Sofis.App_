@@ -1,21 +1,34 @@
-import ColorList from '@/components/ColorList';
-import colors from '@/constants/colors';
-import { ScrollView, StyleSheet, View } from 'react-native';
+// import GlobalList from '@/components/GlobalList';
+// import ReportCard from '@/components/ReportCard';
+// import { useReportsContext } from '@/mock/reports';
+// import { useRouter } from 'expo-router';
+// import { ScrollView, StyleSheet } from 'react-native';
 
-export default function Reports() {
-  return (
-    <ScrollView>
-      <View>
-        <ColorList color={colors.yellow} />
-      </View>
-    </ScrollView>
-  )
-}
+// export default function Reports() {
+//   const { reports } = useReportsContext();
+//   const router = useRouter();
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center'
-  }
-});
+//   function handleOpen(item) {
+//     router.push(`/(actions)/report/${item.id}`);
+//   }
+//   return (
+//     <ScrollView contentContainerStyle={{
+//       paddingBottom: 120,
+//     }}>
+//       <GlobalList
+//         data={reports}
+//         renderItem={(item) => (
+//           <ReportCard item={item} onPress={handleOpen} />
+//         )}
+//       />
+//     </ScrollView>
+//   )
+// }
+
+// const styles = StyleSheet.create({
+//   container: {
+//     flex: 1,
+//     justifyContent: 'center',
+//     alignItems: 'center'
+//   }
+// });

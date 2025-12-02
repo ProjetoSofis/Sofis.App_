@@ -1,133 +1,155 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import axios from 'axios';
-import { createContext, useContext, useEffect, useState } from 'react';
-
-const API_URL = 'http://192.168.97.141/api/v1';
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import axios from "axios";
+import { jwtDecode } from "jwt-decode";
+import { createContext, useContext, useEffect, useState } from "react";
+import api from "../services/api";
 
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
-    const [user, setUser] = useState(null);
-    const [token, setToken] = useState(null);
-    const [isLoading, setIsLoading] = useState(true);
+  const API_URL = api.defaults.baseURL;
 
-    useEffect(() => {
-        const loadToken = async () => {
-            try{
-                const storedToken = await AsyncStorage.getItem('userToken');
-                if (storedToken) {
-                    setToken(storedToken);
-                    // O backend deve retornar um JWT ou token completo
-                    axios.defaults.headers.common['Authorization'] = `Bearer ${storedToken}`;
-                }
-            } catch (e) {
-                console.error('Falha ao carregar o token', e);
-            } finally{
-                setIsLoading(false);
-            }
-        };
-        loadToken();
-    }, []);
-    
-    const login = async (email, password) => {
-        setIsLoading(true);
-        try{
-            const response = await axios.post(`${API_URL}/Auth/login`, {
-                email: email,
-                password: password
-            });
-            console.log('Response: ', response.data);
+  const [user, setUser] = useState(null);
+  const [token, setToken] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-            if (response.data.isTwoFactorRequired) {
-                setIsLoading(false);
-                await AsyncStorage.setItem('pending2FaEmail', email); 
-                return { status: 'REQUIRES_2FA' };
-            }
-            
-            const { token: newTtoken, user: userData } = response.data;
-            await AsyncStorage.setItem('userToken', newTtoken);
-            setToken(newTtoken);
-            setUser(userData);
-            axios.defaults.headers.common['Authorization'] = `Bearer ${newTtoken}`;
-            setIsLoading(false);
-            return { status: 'SUCCESS', token: newTtoken };
-            
-        } catch (e) {
-            console.error('Falha ao fazer login', e.response?.data || e.message);
-            setIsLoading(false)
-            return { status: 'FAILURE', message: e.response?.data.message || 'Erro desconhecido ao tentar acessar a conta'};
-        }
+  const fetchUserById = async (id) => {
+    try {
+      const { data } = await axios.get(`${API_URL}/Employee/${id}`);
+      setUser(data);
+      return data;
+    } catch (err) {
+      console.error("Erro ao buscar Employee por ID:", err.response?.data || err);
+      return null;
     }
+  };
 
+  useEffect(() => {
+    const loadToken = async () => {
+      try {
+        const storedToken = await AsyncStorage.getItem("userToken");
 
-    const login2FA = async (code) => {
-        setIsLoading(true);
-        const email = await AsyncStorage.getItem('pending2FaEmail');
+        if (storedToken) {
+          setToken(storedToken);
+          axios.defaults.headers.common["Authorization"] = `Bearer ${storedToken}`;
 
-        if (!email) {
-            setIsLoading(false);
-            return { status: 'FAILURE', message: 'Email de 2FA não encontrado. Por favor, faça login novamente.' };
+          const decoded = jwtDecode(storedToken);
+
+          if (decoded?.sub) {
+            await fetchUserById(decoded.sub);
+          }
         }
-        
-        try {
-            const response = await axios.post(`${API_URL}/Auth/verify-2fa`, { 
-                email: email,
-                twoFactorCode: code,
-            });
-            console.log("Response 2FA: ", response.data);
-
-            const { token: newTtoken } = response.data; 
-
-            await AsyncStorage.removeItem('pending2FaEmail');
-            await AsyncStorage.setItem('userToken', newTtoken);
-
-            setToken(newTtoken);
-            // setUser(userData);
-            axios.defaults.headers.common['Authorization'] = `Bearer ${newTtoken}`;
-
-            setIsLoading(false);
-            return { status: 'SUCCESS', token: newTtoken }; // Corrigido 'SUCESS' para 'SUCCESS'
-        } catch (e) {
-            console.error('Falha ao fazer login com 2FA', e.response?.data || e.message);
-            setIsLoading(false);
-            return { status: 'FAILURE', message: e.response?.data?.message || 'Código inválido ou expirado' };
-        }
-    }
-
-    const logout = async () => {
-        setIsLoading(true);
-        try{
-            await AsyncStorage.removeItem('userToken');
-            await AsyncStorage.removeItem('pending2FaEmail');
-
-            setToken(null);
-            setUser(null);
-
-            delete axios.defaults.headers.common['Authorization'];
-        } catch (e) {
-            console.error('Falha no logout', e);
-        } finally{
-            setIsLoading(false);
-        }
+      } catch (e) {
+        console.error("Erro ao carregar token:", e);
+      } finally {
+        setIsLoading(false);
+      }
     };
-    
-    const contextValue = {
-        user,
-        token,
-        isLoading,
-        login,
-        logout,
-        login2FA 
+
+    loadToken();
+  }, []);
+
+  const login = async (email, password) => {
+    setIsLoading(true);
+
+    try {
+      const response = await axios.post(`${API_URL}/Auth/login`, {
+        email,
+        password,
+      });
+
+      if (response.data.isTwoFactorRequired) {
+        await AsyncStorage.setItem("pending2FaEmail", email);
+        setIsLoading(false);
+        return { status: "REQUIRES_2FA" };
+      }
+
+      const token = response.data.acessToken;
+
+      if (!token) {
+        setIsLoading(false);
+        return { status: "FAILURE", message: "Token não recebido da API" };
+      }
+
+      await AsyncStorage.setItem("userToken", token);
+      setToken(token);
+
+      axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+
+      const decoded = jwtDecode(token);
+
+      let fullUser = null;
+      if (decoded?.sub) {
+        fullUser = await fetchUserById(decoded.sub);
+      }
+
+      setIsLoading(false);
+      return { status: "SUCCESS", token, user: fullUser };
+
+    } catch (e) {
+      console.log("🔥 ERRO COMPLETO DO LOGIN:", e);
+      console.log("🔥 ERRO RESPONSE:", e?.response?.data);
+      console.log("🔥 STATUS:", e?.response?.status);
+
+      setIsLoading(false);
+      return {
+        status: "FAILURE",
+        message: e.response?.data?.message || "Erro no login",
+      };
     }
-    
-    return (
-        <AuthContext.Provider value={contextValue}>
-            {children}
-        </AuthContext.Provider>
-    );
-}
+  };
 
+  const login2FA = async (code) => {
+    setIsLoading(true);
 
-export const useAuth = () => {
-    return useContext(AuthContext);
-}
+    try {
+      const email = await AsyncStorage.getItem("pending2FaEmail");
+
+      const response = await axios.post(`${API_URL}/Auth/verify-2fa`, {
+        email,
+        twoFactorCode: code,
+      });
+
+      const token = response.data.acessToken;
+
+      await AsyncStorage.setItem("userToken", token);
+      await AsyncStorage.removeItem("pending2FaEmail");
+
+      setToken(token);
+      axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+
+      const decoded = jwtDecode(token);
+
+      if (decoded?.sub) {
+        await fetchUserById(decoded.sub);
+      }
+
+      setIsLoading(false);
+      return { status: "SUCCESS" };
+
+    } catch (e) {
+      setIsLoading(false);
+      return {
+        status: "FAILURE",
+        message: e.response?.data?.message || "Código inválido ou expirado",
+      };
+    }
+  };
+
+  const logout = async () => {
+    await AsyncStorage.multiRemove(["userToken", "pending2FaEmail"]);
+    setUser(null);
+    setToken(null);
+    delete axios.defaults.headers.common["Authorization"];
+  };
+
+  return (
+    <AuthContext.Provider
+      value={{ user, token, login, login2FA, logout, isLoading }}
+    >
+      {children}
+    </AuthContext.Provider>
+  );
+};
+
+export const useAuth = () => useContext(AuthContext);

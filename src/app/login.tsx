@@ -1,7 +1,7 @@
 import colors from '@/constants/colors';
 import paddingTop from '@/constants/screen';
 import { LinearGradient } from 'expo-linear-gradient';
-import { router } from 'expo-router';
+import { Link, router } from 'expo-router';
 import { useState } from 'react';
 import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -136,9 +136,9 @@ export default function Login() {
                     <Text style={styles.buttonText}>Acessar</Text>
                   )}
                 </Pressable>
-                {/* <Link href='/(auth)/signin/LoginPage)' style={styles.link}> */}
+                <Link href='/(auth)/signin/page' style={styles.link}>
                   <Text style={styles.link}>Ainda não possui uma conta? Cadastre-se</Text>
-                {/* </Link> */}
+                </Link>
               </>
             ) : (
               <>
