@@ -20,7 +20,6 @@ export default function Login() {
     password: false,
     code: false,
   });
-  // Vinicius: função de login inicial
   async function HandleSignin() {
     setApiError('');
     const newErrors = {
@@ -136,7 +135,7 @@ export default function Login() {
                     <Text style={styles.buttonText}>Acessar</Text>
                   )}
                 </Pressable>
-                <Link href='/(auth)/signin/page' style={styles.link}>
+                <Link href='/(auth)/signup/page' style={styles.link}>
                   <Text style={styles.link}>Ainda não possui uma conta? Cadastre-se</Text>
                 </Link>
               </>
