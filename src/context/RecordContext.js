@@ -16,7 +16,7 @@ export function RecordProvider({ children }) {
   }
 
   async function createRecord(payload) {
-    const response = await axios.post(`${API_URL}/Children`, payload);
+    const response = await axios.post(`${API_URL}/Report`, payload);
     setRecord(response.data);
   }
 
@@ -25,16 +25,16 @@ export function RecordProvider({ children }) {
     setRecord(null);
   }
   async function deleteRecord(id) {
-    await axios.delete(`${API_URL}/Children/${id}`);
+    await axios.delete(`${API_URL}/Report/${id}`);
     setRecord(null);
   }
   async function loadReports(childId) {
-    const response = await axios.get(`${API_URL}/Children/${childId}/reports`);
+    const response = await axios.get(`${API_URL}/Report/child/${childId}`);
     setReports(response.data);
   }
 
-  async function createReport(childId, payload) {
-    const respose = await axios.post(`${API_URL}/Children/${childId}/report`, payload);
+  async function createReport(payload) {
+    const respose = await axios.post(`${API_URL}/Report`, payload);
     return respose.data;
   }
 

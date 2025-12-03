@@ -84,7 +84,6 @@ export default function ViewRecord() {
           <Text style={styles.fieldLabel}>Ano escolar</Text>
           <Text style={styles.fieldValue}>{record.anoEscolar}</Text>
         </View>
-
         <View style={styles.section}>
           <Text style={styles.fieldLabel}>Nome da mãe</Text>
           <Text style={styles.fieldValue}>{record.momName}</Text>
@@ -113,9 +112,14 @@ export default function ViewRecord() {
           <Text style={styles.buttonText}>Voltar</Text>
         </TouchableOpacity>
         
-        <TouchableOpacity style={[styles.button, { backgroundColor: colors.yellow }]} onPress={() => router.push(`/(actions)/${record.id}/create`)}>
+        <TouchableOpacity style={[styles.button, { backgroundColor: colors.yellow }]} onPress={() => router.push(`/report/${record.id}/create`)}>
           <Text style={styles.buttonText}>Adicionar Relatório</Text>
         </TouchableOpacity>
+
+        <TouchableOpacity style={[styles.button, { backgroundColor: colors.green }]} onPress={() => router.push(`/report/${record.id}/index`)}>
+          <Text style={styles.buttonText}>Ver relatórios</Text>
+        </TouchableOpacity>
+        
       </View>
     </ScrollView>
   );

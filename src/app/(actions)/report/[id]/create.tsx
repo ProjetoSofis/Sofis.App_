@@ -1,23 +1,36 @@
 import colors from "@/constants/colors";
-import { useRouter } from "expo-router";
-import { useState } from "react";
+import { useAuth } from "@/src/context/AuthContext";
+import { useRecord } from "@/src/context/RecordContext";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { useEffect, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, TextInput } from "react-native";
 
 export default function CreateReport() {
+  const { id } = useLocalSearchParams();
+  const { reports, loadReports, createReport } = useRecord();
+  const { user } = useAuth();
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadReports(id);
+  }, [id])
+
   const router = useRouter();
 
   // Estados para enviar à API
-  const [subject, setSubject] = useState("");
+  const [title, setTitle] = useState("");
   const [patient, setPatient] = useState("");
-  const [content, setContent] = useState("");
+  const [description, setDescription] = useState("");
 
   const handleCreate = () => {
-    const payload = { subject, patient, content };
+    const idEmployee = user.id;
+    const payload = { title, description, employeeId: idEmployee, childId: id };
 
     console.log("Criar relatório:", payload);
-    // await api.post("/records", payload);
+    createReport(payload);
 
-    router.back();
+
+    router.push('/(tabs)/home');
   };
 
   return (
@@ -26,8 +39,8 @@ export default function CreateReport() {
       <TextInput
         style={styles.input}
         placeholder="Digite o assunto"
-        value={subject}
-        onChangeText={setSubject}
+        value={title}
+        onChangeText={setTitle}
       />
 
       <Text style={styles.label}>Paciente</Text>
@@ -42,8 +55,8 @@ export default function CreateReport() {
       <TextInput
         style={styles.textarea}
         placeholder="Escreva aqui..."
-        value={content}
-        onChangeText={setContent}
+        value={description}
+        onChangeText={setDescription}
         multiline
       />
 

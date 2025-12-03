@@ -33,7 +33,6 @@ async function createRecord(payload) {
     );
 
     return res.data;
-
   } catch (error) {
     const message =
       error.response?.data?.message ||
