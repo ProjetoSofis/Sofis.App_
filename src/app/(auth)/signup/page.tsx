@@ -4,13 +4,15 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { useAuth } from '../../../context/AuthContext';
 
 export default function Signup() {
-
+  const {register, isLoading: isContextLoading} = useAuth();
+  const [apiError, setApiError] = useState('');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
-  const [telefone, setTelefone] = useState('');
+  const [phone, setPhone] = useState('');
   const [cpf, setCPF] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -19,18 +21,19 @@ export default function Signup() {
   const [errors, setErrors] = useState({
     name: false,
     email: false,
-    telefone: false,
+    phone: false,
     cpf: false,
     password: false,
     confirmPassword: false,
     passwordMismatch: false,
   });
 
-  function HandleSignup() {
+  async function HandleSignup() {
+    setApiError('');
     const newErrors = {
       name: !name.trim(),
       email: !email.trim(),
-      telefone: !telefone.trim(),
+      phone: !phone.trim(),
       cpf: !cpf.trim(),
       password: !password.trim(),
       confirmPassword: !confirmPassword.trim(),
@@ -43,8 +46,25 @@ export default function Signup() {
     if (hasError) return;
 
     setLoading(true);
-    console.log({ name, email, telefone, cpf, password });
+    console.log({ name, email, phone, cpf, password });
+    try{
+      const result = await register(name, email, phone, cpf, 0, password);
+      if (result.status === 'SUCCESS') {
+        Alert.alert(
+          "Sucesso",
+          "Seu cadastro foi realizado com sucesso. Faça login para acessar sua conta",
+          [{text: "OK", onPress: () => router.replace('login')}]
+        );
+      } else{
+        setApiError(result.message || 'Erro desconhecido ao cadastrar.');
+      }
+    } catch (error){
+      console.error("Erro no cadastro:", error);
+      setApiError("Erro desconhecido ao cadastrar.");
+    } finally{
     setLoading(false);
+    }
+
 
     router.replace('../(panel)/profile/page');
   }
@@ -73,6 +93,7 @@ export default function Signup() {
               Criar uma conta
             </Text>
           </View>
+          {apiError ? <Text style={styles.errorText}>{apiError}</Text> : null}
 
           <View style={styles.form}>
 
@@ -92,9 +113,9 @@ export default function Signup() {
 
             <Field
               label="Telefone"
-              value={telefone}
-              onChange={setTelefone}
-              error={errors.telefone}
+              value={phone}
+              onChange={setPhone}
+              error={errors.phone}
             />
 
             <Field
