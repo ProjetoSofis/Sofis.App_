@@ -18,6 +18,7 @@ export default function ViewRecord() {
       try {
         const response = await axios.get(`${API_URL}/Children/${id}`);
         setRecord(response.data);
+        console.log(response.data);
       } catch (err) {
         console.log("Erro ao carregar ficha:", err);
       } finally {
@@ -110,6 +111,10 @@ export default function ViewRecord() {
 
         <TouchableOpacity style={styles.button} onPress={() => router.back()}>
           <Text style={styles.buttonText}>Voltar</Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity style={[styles.button, { backgroundColor: colors.yellow }]} onPress={() => router.push(`/(actions)/${record.id}/create`)}>
+          <Text style={styles.buttonText}>Adicionar Relatório</Text>
         </TouchableOpacity>
       </View>
     </ScrollView>
