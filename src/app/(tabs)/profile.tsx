@@ -9,6 +9,7 @@ import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TouchableOpacit
 export default function Profile() {
   const { user, logout } = useAuth();
   const [loadingDelete, setLoadingDelete] = useState(false);
+  const [loadingLogout, setLoadingLogout] = useState(false);
   const API_URL = api.defaults.baseURL;
 
   if (!user) {
@@ -29,7 +30,32 @@ export default function Profile() {
       ]
     );
   };
+  const Logout = () => {
+    Alert.alert(
+      "Você deseja sair dessa conta?",
+      "Tem certeza?",
+      [
+        { text: "Cancelar", style: "cancel"},
+        {text: "Sair", style: "destructive", onPress: handleLogout}
+      ]
+    );
+  };
 
+  const handleLogout = async () => {
+    try{
+      setLoadingLogout(true);
+      const id = user.id;
+      await logout();
+      router.replace('../login');
+    } catch (error){
+      console.error("Erro ao fazer logout:", error);
+      Alert.alert("Erro", "Não foi possível sair da conta. Tente novamente.");
+    }
+    finally{
+      setLoadingLogout(false)
+    }
+
+  }
   const handleDelete = async () => {
     try {
       setLoadingDelete(true);
@@ -85,8 +111,8 @@ export default function Profile() {
         </TouchableOpacity>
 
         {/* BOTÃO DE SAIR */}
-        <TouchableOpacity style={styles.logoutButton} onPress={logout}>
-          <Text style={styles.logoutText}>Sair da conta</Text>
+        <TouchableOpacity style={styles.logoutButton} onPress={logout} disabled={loadingLogout}>
+          <Text style={styles.logoutText}>{loadingLogout ? "Saindo..." : "Sair da conta"}</Text>
         </TouchableOpacity>
       </View>
     </ScrollView>
