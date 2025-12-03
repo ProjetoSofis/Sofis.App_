@@ -4,152 +4,216 @@ import { jwtDecode } from "jwt-decode";
 import { createContext, useContext, useEffect, useState } from "react";
 import api from "../services/api";
 
-const AuthContext = createContext();
+const AuthContext = createContext({});
 
 export const AuthProvider = ({ children }) => {
-  const API_URL = api.defaults.baseURL;
+    const API_URL = api.defaults.baseURL;
+    const [user, setUser] = useState(null);
+    const [token, setToken] = useState(null);
+    const [isLoading, setIsLoading] = useState(true);
 
-  const [user, setUser] = useState(null);
-  const [token, setToken] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
-
-  const fetchUserById = async (id) => {
-    try {
-      const { data } = await axios.get(`${API_URL}/Employee/${id}`);
-      setUser(data);
-      return data;
-    } catch (err) {
-      console.error("Erro ao buscar Employee por ID:", err.response?.data || err);
-      return null;
-    }
-  };
-
-  useEffect(() => {
-    const loadToken = async () => {
-      try {
-        const storedToken = await AsyncStorage.getItem("userToken");
-
-        if (storedToken) {
-          setToken(storedToken);
-          axios.defaults.headers.common["Authorization"] = `Bearer ${storedToken}`;
-
-          const decoded = jwtDecode(storedToken);
-
-          if (decoded?.sub) {
-            await fetchUserById(decoded.sub);
-          }
+    const fetchUserById = async (id) => {
+        try {
+            const { data } = await axios.get(`${API_URL}/Employee/${id}`);
+            // Removemos o setUser daqui para evitar chamadas duplicadas
+            return data;
+        } catch (err) {
+            console.error("Erro ao buscar Employee:", err.response?.data || err);
+            return null;
         }
-      } catch (e) {
-        console.error("Erro ao carregar token:", e);
-      } finally {
-        setIsLoading(false);
-      }
     };
 
-    loadToken();
-  }, []);
+    const loadUserFromToken = async (jwt) => {
+        try {
+            const decoded = jwtDecode(jwt);
+            if (decoded?.sub) {
+                const fullUser = await fetchUserById(decoded.sub);
+                if (fullUser) {
+                    setUser(fullUser);
+                } else {
+                    // Se a busca falhar, é melhor forçar o logout
+                    await logout(false); // Passa false para não resetar o loading
+                }
+            }
+        } catch (e) {
+            console.error("Erro ao decodificar token:", e);
+            // Token inválido, forçar logout
+            await logout(false);
+        }
+    };
 
-  const login = async (email, password) => {
-    setIsLoading(true);
+    useEffect(() => {
+        const loadToken = async () => {
+            try {
+                const storedToken = await AsyncStorage.getItem("userToken");
+                if (storedToken) {
+                    setToken(storedToken);
+                    axios.defaults.headers.common[
+                        "Authorization"
+                    ] = `Bearer ${storedToken}`;
+                    await loadUserFromToken(storedToken);
+                }
+            } catch (e) {
+                console.error("Falha ao carregar o token", e);
+            } finally {
+                setIsLoading(false);
+            }
+        };
 
-    try {
-      const response = await axios.post(`${API_URL}/Auth/login`, {
-        email,
-        password,
-      });
+        loadToken();
+    }, []);
 
-      if (response.data.isTwoFactorRequired) {
-        await AsyncStorage.setItem("pending2FaEmail", email);
-        setIsLoading(false);
-        return { status: "REQUIRES_2FA" };
-      }
+    const login = async (email, password) => {
+        setIsLoading(true);
+        try {
+            const response = await axios.post(`${API_URL}/Auth/login`, {
+                email,
+                password,
+            });
 
-      const token = response.data.acessToken;
+            if (response.data.isTwoFactorRequired) {
+                await AsyncStorage.setItem("pending2FaEmail", email);
+                setIsLoading(false);
+                return { status: "REQUIRES_2FA" };
+            }
 
-      if (!token) {
-        setIsLoading(false);
-        return { status: "FAILURE", message: "Token não recebido da API" };
-      }
+            // CORREÇÃO AQUI: Usar a variável 'token' que já foi extraída corretamente (acessToken)
+            const accessToken = response.data.acessToken;
 
-      await AsyncStorage.setItem("userToken", token);
-      setToken(token);
+            if (!accessToken) {
+                setIsLoading(false);
+                return { status: "FAILURE", message: "Token não recebido da API" };
+            }
 
-      axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+            // Grava o token correto no AsyncStorage
+            await AsyncStorage.setItem("userToken", accessToken);
 
-      const decoded = jwtDecode(token);
+            // Define o token no estado e no cabeçalho
+            setToken(accessToken);
+            axios.defaults.headers.common["Authorization"] = `Bearer ${accessToken}`;
 
-      let fullUser = null;
-      if (decoded?.sub) {
-        fullUser = await fetchUserById(decoded.sub);
-      }
+            // Carrega os dados completos do usuário usando o token
+            await loadUserFromToken(accessToken);
 
-      setIsLoading(false);
-      return { status: "SUCCESS", token, user: fullUser };
+            setIsLoading(false);
+            return { status: "SUCCESS", token: accessToken };
 
-    } catch (e) {
-      console.log("🔥 ERRO COMPLETO DO LOGIN:", e);
-      console.log("🔥 ERRO RESPONSE:", e?.response?.data);
-      console.log("🔥 STATUS:", e?.response?.status);
+        } catch (e) {
+            console.error("Falha ao fazer login", e.response?.data || e.message);
+            setIsLoading(false);
+            return {
+                status: "FAILURE",
+                message:
+                    e.response?.data?.message ||
+                    "Erro desconhecido ao tentar acessar a conta",
+            };
+        }
+    };
 
-      setIsLoading(false);
-      return {
-        status: "FAILURE",
-        message: e.response?.data?.message || "Erro no login",
-      };
-    }
-  };
+    const login2FA = async (code) => {
+        setIsLoading(true);
 
-  const login2FA = async (code) => {
-    setIsLoading(true);
+        const email = await AsyncStorage.getItem("pending2FaEmail");
 
-    try {
-      const email = await AsyncStorage.getItem("pending2FaEmail");
+        if (!email) {
+            setIsLoading(false);
+            return {
+                status: "FAILURE",
+                message: "Email não encontrado para 2FA. Faça login novamente.",
+            };
+        }
 
-      const response = await axios.post(`${API_URL}/Auth/verify-2fa`, {
-        email,
-        twoFactorCode: code,
-      });
+        try {
+            const response = await axios.post(`${API_URL}/Auth/verify-2fa`, {
+                email,
+                twoFactorCode: code,
+            });
 
-      const token = response.data.acessToken;
+            const { token: newToken } = response.data; // Assumindo que a resposta do 2FA usa 'token'
 
-      await AsyncStorage.setItem("userToken", token);
-      await AsyncStorage.removeItem("pending2FaEmail");
+            await AsyncStorage.removeItem("pending2FaEmail");
+            await AsyncStorage.setItem("userToken", newToken);
 
-      setToken(token);
-      axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+            setToken(newToken);
+            axios.defaults.headers.common["Authorization"] = `Bearer ${newToken}`;
 
-      const decoded = jwtDecode(token);
+            await loadUserFromToken(newToken);
 
-      if (decoded?.sub) {
-        await fetchUserById(decoded.sub);
-      }
+            setIsLoading(false);
+            return { status: "SUCCESS", token: newToken };
+        } catch (e) {
+            console.error("Erro ao validar 2FA", e.response?.data || e);
+            setIsLoading(false);
+            return {
+                status: "FAILURE",
+                message: e.response?.data?.message || "Código inválido",
+            };
+        }
+    };
 
-      setIsLoading(false);
-      return { status: "SUCCESS" };
+    // Ajustada para aceitar um argumento 'setLoading'
+    const logout = async (setLoading = true) => {
+        if (setLoading) setIsLoading(true);
+        try {
+            await AsyncStorage.removeItem("userToken");
+            await AsyncStorage.removeItem("pending2FaEmail");
 
-    } catch (e) {
-      setIsLoading(false);
-      return {
-        status: "FAILURE",
-        message: e.response?.data?.message || "Código inválido ou expirado",
-      };
-    }
-  };
+            setToken(null);
+            setUser(null);
 
-  const logout = async () => {
-    await AsyncStorage.multiRemove(["userToken", "pending2FaEmail"]);
-    setUser(null);
-    setToken(null);
-    delete axios.defaults.headers.common["Authorization"];
-  };
+            delete axios.defaults.headers.common["Authorization"];
+        } catch (e) {
+            console.error("Falha no logout", e);
+        } finally {
+            if (setLoading) setIsLoading(false);
+        }
+    };
 
-  return (
-    <AuthContext.Provider
-      value={{ user, token, login, login2FA, logout, isLoading }}
-    >
-      {children}
-    </AuthContext.Provider>
-  );
+    const register = async (name, email, phone, cpf, role, password) => {
+        setIsLoading(true);
+        try {
+            const response = await axios.post(`${API_URL}/Employee/adicionar`, {
+                name,
+                email,
+                phone,
+                cpf,
+                role,
+                password,
+            });
+
+            if (response.status === 201) {
+                return { status: "SUCCESS" };
+            }
+
+            return { status: "SUCCESS" };
+        } catch (error) {
+            console.error("Erro no cadastro:", error.response?.data || error);
+            return {
+                status: "ERROR",
+                message:
+                    error.response?.data?.message ||
+                    "Erro ao cadastrar. Verifique os dados.",
+            };
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    return (
+        <AuthContext.Provider
+            value={{
+                user,
+                token,
+                isLoading,
+                login,
+                login2FA,
+                logout,
+                register,
+            }}
+        >
+            {children}
+        </AuthContext.Provider>
+    );
 };
 
 export const useAuth = () => useContext(AuthContext);
